@@ -1,107 +1,117 @@
----
-name: gitcode-issue-fix
-description: Use this skill for GitCode-hosted repositories when asked to analyze repository architecture and contribution rules, discover security/functionality/pre-existing bug issues, create GitCode issues with gitcode-cli/gc, fix issues, submit pull requests, or repair PR CI failures while following project contribution guidelines.
----
+# Scope Guard and Engineering Issue Archetypes
 
-# GitCode Issue Fix
+Use this reference when a GitCode issue, PR review fix, CI repair, or new issue discovery task may sprawl across files or mix unrelated concerns.
 
-## Overview
+## Scope Guard
 
-Use this skill for a full GitCode open-source contribution loop: understand the repository, generate a repository architecture and contribution-rules Markdown profile, identify candidate issues, file issues with `gc`, implement minimal fixes, open/update PRs, and drive local/remote CI to green.
+Before editing, write the issue contract in one sentence: the exact GitCode issue, review comment, CI failure, or contributor pain being fixed.
 
-Use the GitCode CLI as `gc`. If only `gitcode` or `gitcode-cli` exists locally, inspect its `--help` and adapt commands.
+Keep the change narrow:
 
-## Required First Step
+- List the files that must change and why before touching them.
+- Do not modify unrelated code, docs, generated metadata, formatting, or workflows.
+- Keep formatter churn limited to files already needed for the issue unless formatting is the issue.
+- Split unrelated cleanup into follow-up GitCode issues and PRs. Do not bundle build-script cleanup, workflow cleanup, docs cleanup, and code refactors unless the issue explicitly asks for that combination.
+- Prefer adding a step to an existing script or workflow job over adding a new job, file, or abstraction.
 
-Before proposing issues or editing code:
+Before committing or pushing:
 
-1. Preserve local work: run `git status --short`, `git branch --show-current`, and `git remote -v`.
-2. Read repository rules: `AGENTS.md`, `CONTRIBUTING*`, `SECURITY*`, `.gitcode/PULL_REQUEST_TEMPLATE*`, `.gitcode/ISSUE_TEMPLATE*`, `.gitcode/workflows/`, `.pre-commit-config.yaml`, build/test configs, and language manifests.
-3. Generate or refresh a repository profile Markdown:
-   - `python "<skill>/scripts/generate_repo_profile.py" --repo "." --output "docs/architecture-and-contribution-rules.md"`
-   - If the repo has another docs convention, choose the nearest existing docs path.
-4. Read `references/gitcode-cli-workflow.md` before using `gc`.
-5. Read `references/pr-quality-gate.md` before committing, pushing, or opening a PR.
+- Inspect `git diff --stat` and `git diff`.
+- Revert or split drive-by changes.
+- Confirm every changed file maps directly to the issue contract.
+- Run the narrowest validation that proves the change, then broader checks only when the blast radius requires them.
 
-For work that may sprawl across files, or when discovering new engineering issues, read
-`references/scope-and-archetypes.md` for the minimal-change scope guard and common issue archetypes.
+When reviewer feedback asks for a smaller approach, reduce the patch first. Keep only the code needed to satisfy the review thread and preserve existing project patterns.
 
-## Issue Discovery
+## Engineering Issue Archetypes
 
-Look for issues in three buckets:
+Use these archetypes to discover reviewable issues and keep PRs focused.
 
-- `security`: unsafe permissions, command injection, path traversal, secret leakage, insecure downloads, missing input validation, unsafe temporary files, or risky default behavior.
-- `functionality`: incorrect behavior, edge cases, missing validation, bad error handling, broken docs/examples, platform incompatibility, or API contract mismatches.
-- `pre-existing bug`: failures visible in tests, static analysis, TODO/FIXME markers with clear impact, stale CI scripts, broken build flags, or contradictions between docs and code.
+### Build Script Usability
 
-For each candidate, collect evidence before filing:
+Look for build scripts that are hard to run locally, have unclear defaults, assume one platform, or fail with poor errors. Good fixes improve messages, document required inputs, make defaults explicit, or reuse project-native helpers.
 
-- impacted files and exact behavior,
-- reproduction or static proof,
-- expected behavior,
-- severity and user impact,
-- proposed minimal fix,
-- validation plan.
+Evidence:
 
-Do not file noisy issues. Skip duplicates, vague design ideas, private-environment problems, issues already owned by maintainers, or items with no reviewable validation path.
+- failing command and exact error,
+- affected shell, OS, or container context,
+- expected contributor workflow,
+- smallest script or docs change that improves the workflow.
 
-## Filing GitCode Issues
+Avoid rewriting the build system unless the issue is specifically about build-system design.
 
-Use repository templates when present. For this common GitCode layout:
+### Build Performance And Dependency Efficiency
 
-- Bug: title prefix like `[Bug-Report|缺陷反馈]: <short summary>`, label `bug-report`.
-- Requirement: title prefix like `[Requirement|需求建议]: <short summary>`, label `requirement`.
-- Documentation: follow the repo's documentation issue template and labels.
+Look for repeated dependency installs, missing caches, overly broad rebuild triggers, unnecessary network fetches, or serial steps that can be safely narrowed.
 
-Prefer body files to avoid shell quoting mistakes:
+Evidence:
 
-```bash
-gc issue create -R <owner>/<repo> --title "<template prefix>: <summary>" --body-file <issue-body.md> --label <label>
-```
+- repeated or expensive step,
+- why the dependency or trigger is broader than needed,
+- local timing, CI log excerpt, or static workflow proof,
+- validation that outputs remain unchanged.
 
-If the installed `gc` version does not support `--body-file`, pass a short `--body` value or use the GitCode API while preserving the same issue content.
+Keep performance PRs measurable and isolated from behavior changes.
 
-After creating an issue, comment `/assign @yourself` only if the project workflow asks contributors to self-assign and you intend to fix it.
+### Unit-Test Efficiency And Reliability
 
-## Fix Workflow
+Look for slow, flaky, over-broad, or environment-coupled unit tests. Good fixes reduce setup cost, narrow parametrization, remove sleeps, add deterministic fixtures, or separate hardware/integration tests from UT.
 
-1. Fetch issue metadata with `gc issue view <number> -R <owner>/<repo> --comments` and search linked PRs with `gc issue prs <number> -R <owner>/<repo>`.
-2. Classify:
-   - `skip`: closed, duplicate, already fixed, active maintainer owner, or outside repo scope.
-   - `needs-info`: missing reproduction, design decision needed, hardware/private data required with no local proxy.
-   - `candidate`: narrow root cause and at least one local/static/test validation path.
-3. Create one branch per independent root cause from the upstream default branch: `codex/issue-<number>-<slug>`.
-4. Implement the smallest mergeable fix. Avoid broad refactors, unrelated formatting, and test weakening.
-5. Add or update focused regression tests where practical. If hardware is required, add deterministic static/unit/docs validation that CI can still review.
-6. Run the quality gate. Record exact commands and results.
-7. Commit using project style and required trailers. Use sign-off only if the project requires it.
-8. Push to a fork and create a PR with `gc pr create`, filling the project PR template and linking the issue.
+Evidence:
 
-## PR and CI Workflow
+- specific test path and command,
+- failure mode or time cost,
+- root cause in fixture, parametrization, dependency, or environment,
+- before/after command result when possible.
 
-Use `gc pr test <number> -R <owner>/<repo>` when the project supports explicit PR test triggering. For projects that use bot comments such as `compile`, follow the contribution guide and comment only after local validation passes.
+Do not weaken assertions or skip tests unless the test is demonstrably in the wrong layer and an equivalent check remains.
 
-When CI fails:
+### Software Architecture And Build Dependency Analysis
 
-1. Inspect PR details and comments: `gc pr view <number> -R <owner>/<repo> --comments`, `gc pr comments <number> -R <owner>/<repo>`.
-2. Classify failures: lint/format, build, unit test, docs, permission gate, hardware gate, flaky/environmental, or reviewer feedback.
-3. Fix only failures caused by the PR. Do not hide failures by deleting tests, weakening assertions, or bypassing checks unless the check is demonstrably wrong.
-4. Re-run the closest local equivalent before pushing.
-5. If CI is blocked by maintainer permission or unavailable hardware, leave a concise PR comment with local validation and the exact remaining gate.
+Look for dependency cycles, hidden import-time side effects, optional dependencies imported unconditionally, or build-time/runtime dependency confusion.
 
-## Output Requirements
+Evidence:
 
-End work with:
+- dependency graph, import path, or build manifest proof,
+- user-visible effect such as slow startup, broken minimal install, or CI failure,
+- minimal boundary change that follows existing architecture.
 
-- repository profile path,
-- issue numbers or skipped issue candidates with reasons,
-- root cause and changed files,
-- tests/validation commands and results,
-- CI status or remaining maintainer/hardware gate,
-- PR URL or a generated handoff path.
+Prefer moving dependency edges to existing extension points over adding broad abstractions.
 
-If automatic PR creation fails, create a local handoff:
+### Duplicate Include, Import, Or Header Cleanup
 
-```bash
-python "<skill>/scripts/generate_pr_report.py" --input <handoff.json> --output <handoff.html>
-```
+Look for duplicated headers, Python imports, stale includes, or repeated declarations that increase build time or confuse ownership.
+
+Evidence:
+
+- exact duplicate include/import locations,
+- proof the symbol is unused or provided elsewhere,
+- static check, compiler check, or targeted test result.
+
+Keep cleanup mechanical and scoped to the duplicated lines. Do not re-sort unrelated import blocks unless the project formatter does it.
+
+### CI And Workflow Correctness
+
+Look for workflow inputs that drift across jobs, duplicated validation snippets, hardcoded versions, inconsistent matrix variables, or checks that do not match local scripts.
+
+Evidence:
+
+- exact `.gitcode/workflows/` file and job,
+- duplicated or inconsistent variable flow,
+- expected source of truth,
+- validation with workflow syntax checks, local script checks, or CI dry-run tooling where available.
+
+Prefer one shared step or existing job output over a new workflow job when the data is only used in that job.
+
+### Documentation Contributor Experience
+
+Look for contributor docs that omit clone/setup steps, mix full development setup with lint-only setup, use platform-specific commands without alternatives, or drift from CI.
+
+Evidence:
+
+- affected doc section,
+- contributor task being blocked,
+- command sequence that works locally or matches CI,
+- minimal docs patch.
+
+Keep docs patches focused on the documented workflow; split unrelated wording cleanup into a separate PR.
