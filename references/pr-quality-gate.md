@@ -59,9 +59,9 @@ Use the repository template. Include:
 After opening a PR:
 
 ```bash
-gc pr view <number> -R <owner>/<repo> --comments
-gc pr test <number> -R <owner>/<repo>
-gc pr comments <number> -R <owner>/<repo>
+gitcode pr view <number> -R <owner>/<repo> --comments
+gitcode pr test <number> -R <owner>/<repo>
+gitcode pr comments <number> -R <owner>/<repo>
 ```
 
 If checks are blocked by maintainer permission, missing hardware, or new-contributor gates, leave a concise comment with local validation and the exact gate. Do not repeatedly push without a code or metadata change.
