@@ -1,15 +1,15 @@
 ---
 name: gitcode-issue-fix
-description: Use this skill for GitCode-hosted repositories when asked to analyze repository architecture and contribution rules, discover security/functionality/pre-existing bug issues, create GitCode issues with gitcode-cli/gc, fix issues, submit pull requests, or repair PR CI failures while following project contribution guidelines.
+description: Use this skill for GitCode-hosted repositories when asked to analyze repository architecture and contribution rules, discover security/functionality/pre-existing bug issues, create GitCode issues with gitcode-cli, fix issues, submit pull requests, or repair PR CI failures while following project contribution guidelines.
 ---
 
 # GitCode Issue Fix
 
 ## Overview
 
-Use this skill for a full GitCode open-source contribution loop: understand the repository, generate a repository architecture and contribution-rules Markdown profile, identify candidate issues, file issues with `gc`, implement minimal fixes, open/update PRs, and drive local/remote CI to green.
+Use this skill for a full GitCode open-source contribution loop: understand the repository, generate a repository architecture and contribution-rules Markdown profile, identify candidate issues, file issues with `gitcode`, implement minimal fixes, open/update PRs, and drive local/remote CI to green.
 
-Use the GitCode CLI as `gc`. If only `gitcode` or `gitcode-cli` exists locally, inspect its `--help` and adapt commands.
+Use the GitCode CLI as `gitcode`/`gitcode.exe` by default. On Windows PowerShell, do not use bare `gc` because it is a built-in alias for `Get-Content`; use `gitcode.exe`, `gc.exe`, or `python -m gc_cli` instead. Inspect `gitcode <subcommand> --help` and adapt commands if flags differ.
 
 ## Required First Step
 
@@ -20,7 +20,7 @@ Before proposing issues or editing code:
 3. Generate or refresh a repository profile Markdown:
    - `python "<skill>/scripts/generate_repo_profile.py" --repo "." --output "docs/architecture-and-contribution-rules.md"`
    - If the repo has another docs convention, choose the nearest existing docs path.
-4. Read `references/gitcode-cli-workflow.md` before using `gc`.
+4. Read `references/gitcode-cli-workflow.md` before using `gitcode`.
 5. Read `references/pr-quality-gate.md` before committing, pushing, or opening a PR.
 
 For work that may sprawl across files, or when discovering new engineering issues, read
@@ -56,16 +56,14 @@ Use repository templates when present. For this common GitCode layout:
 Prefer body files to avoid shell quoting mistakes:
 
 ```bash
-gc issue create -R <owner>/<repo> --title "<template prefix>: <summary>" --body-file <issue-body.md> --label <label>
+gitcode issue create -R <owner>/<repo> --title "<template prefix>: <summary>" --body-file <issue-body.md> --label <label>
 ```
-
-If the installed `gc` version does not support `--body-file`, pass a short `--body` value or use the GitCode API while preserving the same issue content.
 
 After creating an issue, comment `/assign @yourself` only if the project workflow asks contributors to self-assign and you intend to fix it.
 
 ## Fix Workflow
 
-1. Fetch issue metadata with `gc issue view <number> -R <owner>/<repo> --comments` and search linked PRs with `gc issue prs <number> -R <owner>/<repo>`.
+1. Fetch issue metadata with `gitcode issue view <number> -R <owner>/<repo> --comments` and search linked PRs with `gitcode issue prs <number> -R <owner>/<repo>`.
 2. Classify:
    - `skip`: closed, duplicate, already fixed, active maintainer owner, or outside repo scope.
    - `needs-info`: missing reproduction, design decision needed, hardware/private data required with no local proxy.
@@ -75,15 +73,15 @@ After creating an issue, comment `/assign @yourself` only if the project workflo
 5. Add or update focused regression tests where practical. If hardware is required, add deterministic static/unit/docs validation that CI can still review.
 6. Run the quality gate. Record exact commands and results.
 7. Commit using project style and required trailers. Use sign-off only if the project requires it.
-8. Push to a fork and create a PR with `gc pr create`, filling the project PR template and linking the issue.
+8. Push to a fork and create a PR with `gitcode pr create`, filling the project PR template and linking the issue.
 
 ## PR and CI Workflow
 
-Use `gc pr test <number> -R <owner>/<repo>` when the project supports explicit PR test triggering. For projects that use bot comments such as `compile`, follow the contribution guide and comment only after local validation passes.
+Use `gitcode pr test <number> -R <owner>/<repo>` when the project supports explicit PR test triggering. For projects that use bot comments such as `compile`, follow the contribution guide and comment only after local validation passes.
 
 When CI fails:
 
-1. Inspect PR details and comments: `gc pr view <number> -R <owner>/<repo> --comments`, `gc pr comments <number> -R <owner>/<repo>`.
+1. Inspect PR details and comments: `gitcode pr view <number> -R <owner>/<repo> --comments`, `gitcode pr comments <number> -R <owner>/<repo>`.
 2. Classify failures: lint/format, build, unit test, docs, permission gate, hardware gate, flaky/environmental, or reviewer feedback.
 3. Fix only failures caused by the PR. Do not hide failures by deleting tests, weakening assertions, or bypassing checks unless the check is demonstrably wrong.
 4. Re-run the closest local equivalent before pushing.
