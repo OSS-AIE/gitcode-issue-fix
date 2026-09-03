@@ -5,6 +5,10 @@ description: Use this skill for GitCode-hosted repositories when asked to analyz
 
 # GitCode Issue Fix
 
+## Build Engineering Composition
+
+For build-script usability, build/test performance, dependency structure, reproducibility, SBOM, provenance, or build supply-chain security work, **REQUIRED SUB-SKILL:** Use `refactor-build-system` before selecting an issue or editing code. `refactor-build-system` owns the build analysis and issue contract; this skill remains the owner of GitCode issue triage, `gitcode`/`gc.exe` operations, branch/PR changes, Pipeline checks, review feedback, and final handoff. Do not duplicate the build-analysis procedure here.
+
 ## Overview
 
 Use this skill for a full GitCode open-source contribution loop: understand the repository, generate a repository architecture and contribution-rules Markdown profile, identify candidate issues, file issues with `gitcode`, implement minimal fixes, open/update PRs, and drive local/remote CI to green.
