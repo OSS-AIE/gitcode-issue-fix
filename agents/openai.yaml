@@ -1,4 +1,4 @@
 interface:
   display_name: "GitCode Issue Fix"
   short_description: "Analyze GitCode repos, file issues, fix bugs, and open PRs"
-  default_prompt: "Use $gitcode-issue-fix for this GitCode issue or PR. For build-system, dependency, performance, or supply-chain work, also use $refactor-build-system before triage and implementation."
+  default_prompt: "Use $gitcode-issue-fix for this GitCode issue or PR. For CMake, Maven/Gradle, Python packaging, shell wrapper, dependency, cache/parallelism, performance, or supply-chain work, also use $refactor-build-system before triage and implementation."
